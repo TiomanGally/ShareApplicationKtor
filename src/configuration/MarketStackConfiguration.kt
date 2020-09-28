@@ -2,6 +2,10 @@
 
 package de.gally.configuration
 
+import com.fasterxml.jackson.core.util.DefaultIndenter
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.application.Application
 import io.ktor.application.ApplicationStopPreparing
 import io.ktor.application.install
@@ -10,8 +14,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.features.CallLogging
+import io.ktor.features.ContentNegotiation
 import io.ktor.features.DefaultHeaders
 import io.ktor.http.HttpHeaders
+import io.ktor.jackson.jackson
 import io.ktor.util.AttributeKey
 import java.time.LocalDate
 
@@ -25,6 +31,16 @@ fun Application.initConfiguration() {
         header(HttpHeaders.Server, "Nothing but a server")
     }
     install(CallLogging)
+    install(ContentNegotiation) {
+        jackson {
+            configure(SerializationFeature.INDENT_OUTPUT, true)
+            setDefaultPrettyPrinter(DefaultPrettyPrinter().apply {
+                indentArraysWith(DefaultPrettyPrinter.FixedSpaceIndenter.instance)
+                indentObjectsWith(DefaultIndenter("  ", "\n"))
+            })
+            registerModule(JavaTimeModule()) // support java.time.* types
+        }
+    }
 
     // init client and subscribe on application stop to close the client
     val client = HttpClient(Apache) {
